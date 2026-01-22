@@ -3,8 +3,7 @@ Test cases for Tic Tac Toe
 
 Run these tests with: python -m pytest test_game.py -v
 
-These tests describe the expected behavior of your functions.
-Use them to guide your implementation and verify it works!
+These tests describe the expected behavior of my functions.
 
 NOTE: All board values are strings: '0' (empty), '1' (player 1), '2' (player 2)
 """
