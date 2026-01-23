@@ -156,7 +156,7 @@ def get_player_move(player):
         A tuple (row, col) representing the player's chosen move
     
     """
-    answer = input(f'Player {player} input your next move in this format: row,col 0th index-ed')
+    answer = input(f'Player {player} input your next move in this format:\n row,col (0th index-ed)\n')
     row, col = answer.split(",")
     return (int(row),int(col))
 
@@ -185,7 +185,7 @@ def play_game():
             row, col = get_player_move(player)
             if is_valid_move(board, row, col):
                 break
-            print(f'Input move invalid. Check the following and try again: 1) row and col are within bounds (0-2) 2) The target square is empty')
+            print(f'Input move invalid. Check the following and try again:\n 1) row and col are within bounds (0-2)\n 2) The target square is empty')
         board = make_move(board, row, col, player)
         display_board(board)
         if check_winner(board) is not None:
@@ -197,8 +197,7 @@ def play_game():
             elif player == '2':
                 player = '1'
     if check_winner(board) is None:
-        print (f'Game Ended: It is a DRAW')
-
+        print (f"Game Ended: It's a cat's game!\n https://english.stackexchange.com/questions/155621/why-is-a-tie-in-tic-tac-toe-called-a-cats-game")
 
 if __name__ == "__main__":
     play_game()
