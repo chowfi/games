@@ -158,6 +158,21 @@ def get_player_move(player):
     row, col = answer.split(",")
     return (int(row),int(col))
 
+def get_random_move(board):
+    """
+    Random move by AI 
+
+    Args:
+        board: The 3x3 game board
+
+    Returns:
+        A tuple (row, col) representing the random AI's chosen move
+    """
+    while True:
+        row, col = random.randint(0,2), random.randint(0,2)
+        if is_valid_move(board, row, col):
+            break
+    return (row,col)
 
 def play_game():
     """
@@ -182,11 +197,11 @@ def play_game():
         while True:
             if player == '1':
                 row, col = get_player_move(player)
-            elif player == '2':
-                row, col = random.randint(0,2), random.randint(0,2)
             if is_valid_move(board, row, col):
                 break
             print(f'Input move invalid. Check the following and try again:\n 1) row and col are within bounds (0-2)\n 2) The target square is empty')
+            if player == '2':
+                row, col = get_random_move(board)
         board = make_move(board, row, col, player)
         display_board(board)
         if check_winner(board) is not None:
