@@ -9,7 +9,7 @@ Players are represented as:
 Board is a 3x3 matrix (list of lists)
 Coordinates are 0-indexed: (row, col)
 """
-
+import random
 
 def create_empty_board():
     """
@@ -180,7 +180,10 @@ def play_game():
     display_board(board)
     while not is_board_full(board):
         while True:
-            row, col = get_player_move(player)
+            if player == '1':
+                row, col = get_player_move(player)
+            elif player == '2':
+                row, col = random.randint(0,2), random.randint(0,2)
             if is_valid_move(board, row, col):
                 break
             print(f'Input move invalid. Check the following and try again:\n 1) row and col are within bounds (0-2)\n 2) The target square is empty')
