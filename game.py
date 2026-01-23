@@ -38,12 +38,10 @@ def display_board(board):
             else:
                 presentation.append('.')
         return presentation
-    def combine(board):    
-        for i in range(len(board)):
-            if i == 0 or i == 1:
-                print(" | ".join(present(board[i])) + '\n' +  '-'*9)
-            else: 
-                print(" | ".join(present(board[i])))
+    def combine(board):   
+        beg = print('    0   1   2  '+ '\n' + '  ' + '-'*13) 
+        for i in range(len(board)):      
+            print(f'{i} '+ "| " + " | ".join(present(board[i])) + " |" + '\n' + '  ' + '-'*13 )
 
     return combine(board)
 
