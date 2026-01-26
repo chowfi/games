@@ -10,7 +10,9 @@ Board is a 3x3 matrix (list of lists)
 Coordinates are 0-indexed: (row, col)
 """
 import random
-
+##################################
+# Base TicTacToe: 2 Human Players
+##################################
 def create_empty_board():
     """
     Create and return a 3x3 board filled with zeros.
@@ -158,6 +160,10 @@ def get_player_move(player):
     row, col = answer.split(",")
     return (int(row),int(col))
 
+#####################################################
+# Extension TicTacToe: 1 Human Player and 1 AI agent
+#####################################################
+
 def get_random_move(board):
     """
     Random move by AI 
@@ -173,6 +179,17 @@ def get_random_move(board):
         if is_valid_move(board, row, col):
             break
     return (row,col)
+
+def evaluate(board, ai_player):
+    winner = check_winner(board)
+
+    if winner == ai_player:
+        return +1
+    elif winner is None:
+        return 0
+    else:   
+        return -1
+
 
 def play_game():
     """
