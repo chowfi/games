@@ -190,7 +190,7 @@ def evaluate(board, ai_player):
     else:   
         return -1
 
-
+# def minimax(board, is_maximizing, ai_player):
 def play_game():
     """
     Main game loop.
