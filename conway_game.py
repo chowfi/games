@@ -1,4 +1,5 @@
 import random
+from typing import List
 
 def board(n):
     board_list = []
@@ -44,12 +45,31 @@ def logic(b,n):
                 continue
     return b
 
+def generate_conway_board(board_size: int):
+    current_board = board(board_size)
+
+    while True:
+        yield current_board
+
+        current_board = logic(current_board, board_size)
+
+def visualize_board(board: List[List[int]]):
+    # print("--------------")
+    rendered_board = ''
+    for row in board:
+        # print(row)
+        rendered_board += "\n"
+
 if __name__ == "__main__":
-    n=3
-    cur_board = board(n)
-    # cur_board = [[0,0,0],[0,0,1],[0,1,0]]
-    print(f'initial iteration: {cur_board}')
-    print(f'count: {count_live_neighbors(cur_board,n)}')
-    for i in range(2):
-        print(f'post {i} step curr board: {logic(cur_board, n)}')
-        print(f'post {i} step count: {count_live_neighbors(cur_board,n)}')
+    # n=3
+    # cur_board = board(n)
+    # # cur_board = [[0,0,0],[0,0,1],[0,1,0]]
+    # print(f'initial iteration: {cur_board}')
+    # print(f'count: {count_live_neighbors(cur_board,n)}')
+    # for i in range(2):
+    #     print(f'post {i} step curr board: {logic(cur_board, n)}')
+    #     print(f'post {i} step count: {count_live_neighbors(cur_board,n)}')
+    conway_board_generator = generate_conway_board(5)
+    for _ in range(10):
+        current_board = next(conway_board_generator)
+        visualize_board(current_board)
