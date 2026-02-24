@@ -1,4 +1,5 @@
 from typing import List
+import csv
 import random
 
 #Minesweeper in CLI
@@ -22,15 +23,25 @@ class Minesweeper:
     HIDDEN = "\u2588" 
     FLAG = "🚩"
 
-    def __init__(self, n_board: int = 8, n_mines: int = 10, seed_value: int = 42):
-        random.seed(seed_value)
+    def __init__(self, n_board: int = 8, n_mines: int = 10, seed_value: int = 42, * , board: List[List[str]] = None, reveal_board: List[List[bool]] = None, visual_board: List[List[str]] = None, count_flags: int = 0):
+        self.seed_value = seed_value
+        random.seed(self.seed_value)
         self.n_board = n_board
         self.n_mines = n_mines
-        self.count_flags = 0
-        self.board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
-        self.reveal_board = [[False for _ in range(self.n_board)] for _ in range(self.n_board)]
-        self.visual_board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
-        
+        self.count_flags = count_flags
+        if board is None:
+            self.board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
+        if board is not None:
+            self.board = board
+        if reveal_board is None:
+            self.reveal_board = [[False for _ in range(self.n_board)] for _ in range(self.n_board)]
+        if reveal_board is not None:
+            self.reveal_board = reveal_board
+        if visual_board is None:
+            self.visual_board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
+        if visual_board is not None:
+            self.visual_board = visual_board
+
         #shuffle and update for mines
         all_cells = [
             (row, col)
@@ -97,27 +108,29 @@ class Minesweeper:
 
     def user_input(self):
         while True:
-            move = input(f'Input your next move in this format:\n R / F, row, col (0th index-ed) to reveal board / plant flag \n')
+            move = input(f'Input your next move in this format:\n R / F / S, row, col (0th index-ed) or 0,0 (for saving) to reveal board / plant flag / save board \n')
             mode, row, col = move.split(",")
             row = int(row)
             col = int(col)
-            if row < self.n_board and row >= 0:
-                if col < self.n_board and col >= 0:
-                    if mode == 'R':
-                        if self.board[row][col] == '0':
-                            self.boundary_detection(row, col)  # dfs reveals this cell and all connected 0s
-                        elif self.board[row][col] == self.BOMB: 
-                            self.reveal_board[row][col] = True  
-                            print("Game Over")
-                            break
-                        else:
-                            self.reveal_board[row][col] = True  
-                    elif mode == 'F':
-                        self.reveal_board[row][col] = True
-                        self.visual_board[row][col] = self.FLAG
-                        self.count_flags +=1
-                    return True
-        return False
+            # if row < self.n_board and and col >= 0:
+            if mode == 'R':
+                if self.board[row][col] == '0':
+                    self.boundary_detection(row, col)  # dfs reveals this cell and all connected 0s
+                elif self.board[row][col] == self.BOMB: 
+                    self.reveal_board[row][col] = True  
+                    print("Game Over")
+                    break
+                else:
+                    self.reveal_board[row][col] = True  
+            elif mode == 'F':
+                self.reveal_board[row][col] = True
+                self.visual_board[row][col] = self.FLAG
+                self.count_flags +=1
+            elif mode == 'S':
+                self.save_game()
+                break
+            return True
+        return False 
 
     def boundary_detection(self, row, col):
         """
@@ -168,6 +181,30 @@ class Minesweeper:
                 if self.reveal_board[row][col] == False:
                     return False
 
+    def save_game(self):
+        with open('save.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([self.n_board, self.n_mines, self.seed_value, self.count_flags])
+            writer.writerows(self.board)
+            writer.writerows(self.reveal_board)
+            writer.writerows(self.visual_board)
+    
+    def load_game(self):
+        with open('save.csv', 'r') as file:
+            reader = list(csv.reader(file))
+            self.n_board, self.n_mines, self.seed_value, self.count_flags = reader[0]
+            self.n_board = int(self.n_board)
+            self.n_mines = int(self.n_mines)
+            self.seed_value = int(self.seed_value)
+            self.count_flags = int(self.count_flags)
+            self.board = reader[1:5] #hardcoded to board size
+            # CSV gives strings even booleans become strings; hence converting back to boolean below
+            self.reveal_board = [[cell == 'True' for cell in row] for row in reader[5:9]]
+            self.visual_board = reader[9:13] #hardcoded to board size
+
+        ms = Minesweeper(self.n_board, self.n_mines, self.seed_value, board = self.board, reveal_board= self.reveal_board, visual_board = self.visual_board, count_flags = self.count_flags) 
+        ms.game_play()
+
     def game_play(self):
         """
         1] Visualize truth board and visual board
@@ -189,4 +226,5 @@ class Minesweeper:
 
 if __name__ == "__main__":
     ms = Minesweeper(4,1)
-    ms.game_play()
+    # ms.game_play()
+    ms.load_game()
