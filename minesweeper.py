@@ -14,18 +14,22 @@ Helper functions:
 - Save and load game states
 - Undo moves
 - Counter of mines left and timer of game
+- Print coordinates on game board
 
 """
 class Minesweeper:
     BOMB = "x"
     HIDDEN = "\u2588" 
+    FLAG = "🚩"
 
     def __init__(self, n_board: int = 8, n_mines: int = 10, seed_value: int = 42):
         random.seed(seed_value)
         self.n_board = n_board
         self.n_mines = n_mines
+        self.count_flags = 0
         self.board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
-        self.user_board = [[False for _ in range(self.n_board)] for _ in range(self.n_board)]
+        self.reveal_board = [[False for _ in range(self.n_board)] for _ in range(self.n_board)]
+        self.visual_board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
         
         #shuffle and update for mines
         all_cells = [
@@ -74,38 +78,115 @@ class Minesweeper:
         for row in range(self.n_board):
             for col in range(self.n_board):
 
-                if self.user_board[row][col] is False:
-                    self.user_board[row][col] = self.HIDDEN
+                if self.reveal_board[row][col] is False:
+                    self.visual_board[row][col] = self.HIDDEN
 
-                elif self.user_board[row][col] is True: 
+                elif self.reveal_board[row][col] is True: 
 
-                    if self.board[row][col] == self.BOMB:
-                        self.user_board[row][col] = '💣'
-                        break
+                    if self.board[row][col] == self.BOMB and self.visual_board[row][col] != self.FLAG:
+                        self.visual_board[row][col] = '💣'
+
                     elif self.board[row][col] == '0':
-                        self.user_board[row][col] = '.'
-                        break
-                    else:
-                        self.user_board[row][col] == self.board
-                        break
+                        self.visual_board[row][col] = '.'
 
-            print(self.user_board[row])
+                    elif self.board[row][col] != self.BOMB and self.visual_board[row][col] != self.FLAG:
+                        self.visual_board[row][col] = self.board[row][col]
+
+            print(self.visual_board[row])
             print(" "*20)
 
     def user_input(self):
         while True:
-            move = input(f'Input your next move in this format:\n row,col (0th index-ed)\n')
-            row, col = move.split(",")
+            move = input(f'Input your next move in this format:\n R / F, row, col (0th index-ed) to reveal board / plant flag \n')
+            mode, row, col = move.split(",")
             row = int(row)
             col = int(col)
             if row < self.n_board and row >= 0:
                 if col < self.n_board and col >= 0:
-                    self.user_board[row][col] = True
-                    return (row, col)
+                    if mode == 'R':
+                        if self.board[row][col] == '0':
+                            self.boundary_detection(row, col)  # dfs reveals this cell and all connected 0s
+                        elif self.board[row][col] == self.BOMB: 
+                            self.reveal_board[row][col] = True  
+                            print("Game Over")
+                            break
+                        else:
+                            self.reveal_board[row][col] = True  
+                    elif mode == 'F':
+                        self.reveal_board[row][col] = True
+                        self.visual_board[row][col] = self.FLAG
+                        self.count_flags +=1
+                    return True
+        return False
+
+    def boundary_detection(self, row, col):
+        """
+        If given cell is visible and has 0 neighboring bombs,
+        this algorithm will expand the search space until we find the boundary of eiher the edge of the board
+        or a cell with a string value of >0.
+
+        Returns the new user_board view with expanded visibility
+
+        Algo:
+        1) if !='0', return after changing user_board visibility or if reach boundary of game, return  " "
+        2) if not, dfs a neighboring node
+        """
+        def dfs(row, col):
+
+            if row >= self.n_board or row < 0 or col >= self.n_board or col < 0:
+                return 
             
+            if self.reveal_board[row][col] == True:
+                return
+
+            if self.board[row][col] != '0':
+                self.reveal_board[row][col] = True
+                return
+
+            if self.board[row][col] == '0':
+                self.reveal_board[row][col] = True
+                
+            neighbors = [(-1, -1), (-1, 0), (-1,1),
+            (0,-1), (0,1),
+            (1,-1), (1,0), (1,1)]
+
+            for dr,dc in neighbors:
+                new_row, new_col = row + dr, col + dc
+                dfs(new_row, new_col)
+        
+        return dfs(row, col)
+
+    def is_end_game(self):
+        # Loss
+        for row in range(self.n_board):
+            for col in range(self.n_board):
+                if self.reveal_board[row][col] == True and self.board[row][col] == self.BOMB and self.visual_board[row][col] != self.FLAG:
+                    return True
+        # Game continues or win
+        for row in range(self.n_board):
+            for col in range(self.n_board):
+                if self.reveal_board[row][col] == False:
+                    return False
+
+    def game_play(self):
+        """
+        1] Visualize truth board and visual board
+        2] Take user input
+        3] Show updated visual board
+        4] Check if end game, if not continue user input
+        """
+        self.visualize_truth() # for me to check the game play during testing
+        print("-"*40)
+        self.visualize_board()
+
+        while not self.is_end_game():
+            while self.user_input():
+                self.visualize_board()
+                if self.count_flags == self.n_mines:
+                    print("You Win! 🙂")
+                    break
+            break
+
 if __name__ == "__main__":
-    ms = Minesweeper()
-    ms.visualize_truth()
-    ms.visualize_board()
-    ms.user_input()
-    ms.visualize_board()
+    ms = Minesweeper(4,1)
+    ms.game_play()
