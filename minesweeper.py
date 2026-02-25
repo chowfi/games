@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 import csv
 import random
+import time
 
 #Minesweeper in CLI
 
@@ -12,9 +13,9 @@ import random
 5 - End game logic: When everything is visible and player has not died. They win
 
 Helper functions:
-- Save and load game states
+- Save and load game states (done)
 - Undo moves
-- Counter of mines left and timer of game
+- Counter of mines left and timer of game (done)
 - Print coordinates on game board
 
 """
@@ -23,12 +24,13 @@ class Minesweeper:
     HIDDEN = "\u2588" 
     FLAG = "🚩"
 
-    def __init__(self, n_board: int = 8, n_mines: int = 10, seed_value: int = 42, * , board: List[List[str]] = None, reveal_board: List[List[bool]] = None, visual_board: List[List[str]] = None, count_flags: int = 0):
+    def __init__(self, n_board: int = 8, n_mines: int = 10, seed_value: int = 42, * , board: Optional[List[List[str]]] = None, reveal_board: Optional[List[List[bool]]] = None, visual_board: Optional[List[List[str]]] = None, count_flags: int = 0, total_elapsed_seconds: Optional[float] = None):
         self.seed_value = seed_value
         random.seed(self.seed_value)
         self.n_board = n_board
         self.n_mines = n_mines
         self.count_flags = count_flags
+        self.total_elapsed_seconds = total_elapsed_seconds
         if board is None:
             self.board = [['0' for _ in range(self.n_board)] for _ in range(self.n_board)]
         if board is not None:
@@ -108,28 +110,32 @@ class Minesweeper:
 
     def user_input(self):
         while True:
-            move = input(f'Input your next move in this format:\n R / F / S, row, col (0th index-ed) or 0,0 (for saving) to reveal board / plant flag / save board \n')
+            move = input(f'Input your next move in this format:\n "R (reveal) / F (flag), row, col (0th index-ed) \n or S,0,0 to save" \n')
             mode, row, col = move.split(",")
             row = int(row)
             col = int(col)
-            # if row < self.n_board and and col >= 0:
-            if mode == 'R':
-                if self.board[row][col] == '0':
-                    self.boundary_detection(row, col)  # dfs reveals this cell and all connected 0s
-                elif self.board[row][col] == self.BOMB: 
-                    self.reveal_board[row][col] = True  
-                    print("Game Over")
-                    break
-                else:
-                    self.reveal_board[row][col] = True  
-            elif mode == 'F':
-                self.reveal_board[row][col] = True
-                self.visual_board[row][col] = self.FLAG
-                self.count_flags +=1
-            elif mode == 'S':
-                self.save_game()
-                break
-            return True
+            if row < self.n_board and row >= 0:
+                if col < self.n_board and col >= 0:
+                    if mode == 'R' and self.reveal_board[row][col] == False:
+                        if self.board[row][col] == '0':
+                            self.boundary_detection(row, col)  # dfs reveals this cell and all connected 0s
+                            return True
+                        elif self.board[row][col] == self.BOMB: 
+                            self.reveal_board[row][col] = True  
+                            print("Game Over")
+                            break
+                        else:
+                            self.reveal_board[row][col] = True  
+                            return True
+                    elif mode == 'F' and self.reveal_board[row][col] == False:
+                        self.reveal_board[row][col] = True
+                        self.visual_board[row][col] = self.FLAG
+                        self.count_flags +=1
+                        return True
+                    elif mode == 'S':
+                        self.save_game()
+                        break
+                    print(f'Input move invalid. Check the following and try again:\n 1) row and col are within bounds \n 2) The target tile has not been uncovered \n')  
         return False 
 
     def boundary_detection(self, row, col):
@@ -180,29 +186,41 @@ class Minesweeper:
             for col in range(self.n_board):
                 if self.reveal_board[row][col] == False:
                     return False
+    
+    def time_elapsed(self):
+        if self.total_elapsed_seconds is None:
+            self.total_elapsed_seconds = time.perf_counter() - self.start_time
+            return self.total_elapsed_seconds
+        else:
+            self.total_elapsed_seconds += time.perf_counter() - self.start_time
+            return self.total_elapsed_seconds
 
     def save_game(self):
+        self.time_taken = self.time_elapsed()
+
         with open('save.csv', 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([self.n_board, self.n_mines, self.seed_value, self.count_flags])
+            writer.writerow([self.n_board, self.n_mines, self.seed_value, self.count_flags, self.time_taken])
             writer.writerows(self.board)
             writer.writerows(self.reveal_board)
             writer.writerows(self.visual_board)
+
     
     def load_game(self):
         with open('save.csv', 'r') as file:
             reader = list(csv.reader(file))
-            self.n_board, self.n_mines, self.seed_value, self.count_flags = reader[0]
+            self.n_board, self.n_mines, self.seed_value, self.count_flags, self.total_elapsed_seconds = reader[0]
             self.n_board = int(self.n_board)
             self.n_mines = int(self.n_mines)
             self.seed_value = int(self.seed_value)
             self.count_flags = int(self.count_flags)
+            self.total_elapsed_seconds = float(self.total_elapsed_seconds) #if self.total_elapsed_seconds else 0.0
             self.board = reader[1:5] #hardcoded to board size
             # CSV gives strings even booleans become strings; hence converting back to boolean below
             self.reveal_board = [[cell == 'True' for cell in row] for row in reader[5:9]]
             self.visual_board = reader[9:13] #hardcoded to board size
 
-        ms = Minesweeper(self.n_board, self.n_mines, self.seed_value, board = self.board, reveal_board= self.reveal_board, visual_board = self.visual_board, count_flags = self.count_flags) 
+        ms = Minesweeper(self.n_board, self.n_mines, self.seed_value, board = self.board, reveal_board= self.reveal_board, visual_board = self.visual_board, count_flags = self.count_flags, total_elapsed_seconds = self.total_elapsed_seconds) 
         ms.game_play()
 
     def game_play(self):
@@ -212,6 +230,8 @@ class Minesweeper:
         3] Show updated visual board
         4] Check if end game, if not continue user input
         """
+        self.start_time = time.perf_counter()
+
         self.visualize_truth() # for me to check the game play during testing
         print("-"*40)
         self.visualize_board()
@@ -219,12 +239,15 @@ class Minesweeper:
         while not self.is_end_game():
             while self.user_input():
                 self.visualize_board()
+                print(f'Flags Left = {self.n_mines - self.count_flags}')
                 if self.count_flags == self.n_mines:
+                    self.time_taken = self.time_elapsed()
                     print("You Win! 🙂")
+                    print(f'Time taken: {self.time_taken:.1f}s')
                     break
             break
 
 if __name__ == "__main__":
     ms = Minesweeper(4,1)
-    # ms.game_play()
-    ms.load_game()
+    ms.game_play()
+    # ms.load_game()
